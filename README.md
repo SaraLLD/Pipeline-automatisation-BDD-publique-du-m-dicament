@@ -2,8 +2,8 @@
 
 Pipeline data end-to-end sur la **Base de Données Publique des Médicaments** française (ANSM · HAS · UNCAM).
 
-**[🔴 Demo live →]([https://saralld.github.io/Pipeline-automatisation-BDD-publique-du-m-dicament/)**
-
+**[🔴 Demo live →]
+https://saralld.github.io/Pipeline-automatisation-BDD-publique-du-m-dicament/ 
 ---
 
 ## Ce que fait ce projet
