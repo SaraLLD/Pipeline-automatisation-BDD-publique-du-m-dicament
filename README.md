@@ -39,36 +39,6 @@ Pipeline data end-to-end sur la **Base de Données Publique des Médicaments** f
 
 ---
 
-## 🚀 Déploiement en 2 étapes
-
-### Étape 1 — Backend sur Render (gratuit)
-
-1. Va sur [render.com](https://render.com) → **New Web Service**
-2. Connecte ton repo GitHub
-3. Configure :
-   - **Build command** : `pip install -r requirements.txt`
-   - **Start command** : `uvicorn main:app --host 0.0.0.0 --port $PORT`
-4. Clique **Deploy**
-5. Copie ton URL Render (ex: `https://ton-app.onrender.com`)
-
-### Étape 2 — Mettre à jour l'URL dans index.html
-
-Ouvre `index.html`, ligne ~210 :
-```javascript
-const API = 'https://TON-URL.onrender.com';
-```
-
-Remplace par ton URL Render, puis commit & push.
-
-### Étape 3 — Dashboard sur GitHub Pages
-
-1. **Settings → Pages**
-2. Branch : `main` · Folder : `/ (root)`
-3. **Save**
-4. Ton dashboard est live sur : `https://SaraLLD.github.io/NOM-DU-REPO`
-
----
-
 ## Stack technique
 
 ```
