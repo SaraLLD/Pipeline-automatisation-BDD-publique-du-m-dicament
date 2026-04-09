@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboard Médicaments BDPM</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d2e;--card:#222538;--border:#2e3150;--accent:#6c63ff;--accent2:#00d4aa;--accent3:#ff6b6b;--accent4:#ffd93d;--text:#e8eaf6;--muted:#8892b0;--white:#fff;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;display:flex;min-height:100vh;}
+.sidebar{width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;position:fixed;height:100vh;z-index:100;}
+.logo{padding:0 18px 20px;border-bottom:1px solid var(--border);}
+.logo h2{font-size:14px;color:var(--white);font-weight:700;}
+.logo p{font-size:11px;color:var(--muted);margin-top:3px;}
+.nav{flex:1;padding:12px 0;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 18px;cursor:pointer;color:var(--muted);font-size:13px;transition:.2s;border-left:3px solid transparent;user-select:none;}
+.nav-item:hover{color:var(--text);background:rgba(108,99,255,.08);}
+.nav-item.active{color:var(--accent);background:rgba(108,99,255,.13);border-left-color:var(--accent);font-weight:600;}
+.nav-icon{font-size:15px;width:18px;text-align:center;}
+.sidebar-footer{padding:14px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.6;}
+.main{margin-left:230px;flex:1;padding:28px;min-height:100vh;}
+.page{display:none;animation:fadeIn .25s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-title{font-size:22px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:22px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.last-update{font-size:11px;color:var(--muted);}
+.refresh-btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s;}
+.refresh-btn:hover{opacity:.85;}
+.mode-badge{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(255,217,61,.15);color:var(--accent4);border:1px solid rgba(255,217,61,.3);}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-bottom:24px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
+.kpi-value{font-size:26px;font-weight:800;color:var(--white);margin:6px 0 2px;}
+.kpi-sub{font-size:11px;color:var(--muted);}
+.kpi-accent{border-top:3px solid var(--accent);}
+.kpi-green{border-top:3px solid var(--accent2);}
+.kpi-red{border-top:3px solid var(--accent3);}
+.kpi-yellow{border-top:3px solid var(--accent4);}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:18px;margin-bottom:20px;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.chart-card.full{grid-column:1/-1;}
+.chart-title{font-size:14px;font-weight:600;color:var(--white);margin-bottom:3px;}
+.chart-sub{font-size:11px;color:var(--muted);margin-bottom:14px;}
+.chart-wrap{position:relative;height:260px;}
+.chart-wrap-tall{position:relative;height:340px;}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:18px;}
+.table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.search-input{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;width:260px;outline:none;}
+.search-input:focus{border-color:var(--accent);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{color:var(--muted);font-weight:600;text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:9px 10px;border-bottom:1px solid rgba(46,49,80,.5);color:var(--text);}
+tr:hover td{background:rgba(108,99,255,.04);}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-green{background:rgba(0,212,170,.15);color:var(--accent2);}
+.badge-red{background:rgba(255,107,107,.15);color:var(--accent3);}
+.badge-yellow{background:rgba(255,217,61,.15);color:var(--accent4);}
+.badge-blue{background:rgba(108,99,255,.15);color:var(--accent);}
+.badge-grey{background:rgba(136,146,176,.15);color:var(--muted);}
+.alerte-item{display:flex;gap:12px;padding:14px;background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.2);border-radius:10px;margin-bottom:10px;}
+.alerte-icon{font-size:20px;flex-shrink:0;}
+.alerte-body h4{font-size:13px;font-weight:600;color:var(--white);}
+.alerte-body p{font-size:12px;color:var(--muted);margin-top:3px;}
+.alerte-body a{color:var(--accent);font-size:12px;}
+.toggle-group{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.toggle-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:.2s;}
+.toggle-btn.active{color:#fff;}
+.progress-bar{background:var(--border);border-radius:4px;height:7px;flex:1;}
+.progress-fill{height:7px;border-radius:4px;background:var(--accent);}
+.log-ok{color:var(--accent2);}
+.log-err{color:var(--accent3);}
+.api-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);}
+.dot.offline{background:var(--accent4);}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <h2>💊 Med Dashboard</h2>
+    <p>BDPM · France · ANSM</p>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('overview',this)"><span class="nav-icon">📊</span><span>Vue d'ensemble</span></div>
+    <div class="nav-item" onclick="showPage('medicaments',this)"><span class="nav-icon">🔍</span><span>Médicaments</span></div>
+    <div class="nav-item" onclick="showPage('labos',this)"><span class="nav-icon">🏭</span><span>Laboratoires</span></div>
+    <div class="nav-item" onclick="showPage('amm',this)"><span class="nav-icon">📅</span><span>AMM & Indications</span></div>
+    <div class="nav-item" onclick="showPage('prix',this)"><span class="nav-icon">💰</span><span>Prix & Remboursement</span></div>
+    <div class="nav-item" onclick="showPage('alertes',this)"><span class="nav-icon">⚠️</span><span>Alertes & Retraits</span></div>
+    <div class="nav-item" onclick="showPage('pipeline',this)"><span class="nav-icon">⚙️</span><span>Pipeline & Logs</span></div>
+  </nav>
+  <div class="sidebar-footer">
+    Source : BDPM officielle<br>ANSM · HAS · UNCAM<br>Mise à jour : 2× / jour
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- ══════════ OVERVIEW ══════════ -->
+<section id="page-overview" class="page active">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Vue d'ensemble</div>
+      <div class="page-sub">Base de Données Publique des Médicaments — France</div>
+    </div>
+    <div class="topbar-right">
+      <span class="mode-badge" id="mode-badge">⚡ Mode démo</span>
+      <span class="last-update" id="last-update-text"></span>
+      <button class="refresh-btn" onclick="triggerRefresh()">↻ Actualiser</button>
+    </div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi kpi-accent"><div class="kpi-label">Total médicaments</div><div class="kpi-value" id="kpi-total">15 847</div><div class="kpi-sub">dans la BDPM</div></div>
+    <div class="kpi kpi-green"><div class="kpi-label">Commercialisés</div><div class="kpi-value" id="kpi-comm">11 203</div><div class="kpi-sub">en pharmacie</div></div>
+    <div class="kpi kpi-yellow"><div class="kpi-label">Remboursés Sécu</div><div class="kpi-value" id="kpi-remb">8 941</div><div class="kpi-sub">présentations</div></div>
+    <div class="kpi kpi-red"><div class="kpi-label">Alertes / Retraits</div><div class="kpi-value" id="kpi-alertes">342</div><div class="kpi-sub">informations importantes</div></div>
+    <div class="kpi kpi-accent"><div class="kpi-label">Laboratoires</div><div class="kpi-value" id="kpi-labos">724</div><div class="kpi-sub">titulaires d'AMM</div></div>
+    <div class="kpi kpi-green"><div class="kpi-label">Groupes génériques</div><div class="kpi-value" id="kpi-gen">2 184</div><div class="kpi-sub">groupes actifs</div></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Répartition par type d'AMM</div>
+      <div class="chart-sub">Nationale, européenne centralisée, reconnaissance mutuelle...</div>
+      <div class="chart-wrap"><canvas id="chart-amm-type"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">État de commercialisation</div>
+      <div class="chart-sub">Médicaments actuellement disponibles en pharmacie</div>
+      <div class="chart-wrap"><canvas id="chart-etat"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top 10 formes pharmaceutiques</div>
+      <div class="chart-sub">Répartition par forme galénique (comprimés, gélules, solutions...)</div>
+      <div class="chart-wrap"><canvas id="chart-formes"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Taux de remboursement Sécu</div>
+      <div class="chart-sub">Répartition des présentations par taux de prise en charge</div>
+      <div class="chart-wrap"><canvas id="chart-remb"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ MÉDICAMENTS ══════════ -->
+<section id="page-medicaments" class="page">
+  <div class="page-title">Recherche médicaments</div>
+  <div class="page-sub">Recherche dans les 15 800+ médicaments de la BDPM officielle</div>
+  <div class="table-card">
+    <div class="table-header">
+      <input class="search-input" id="search-med" placeholder="🔍 Ex: doliprane, amoxicilline..." oninput="searchMed()"/>
+      <span style="font-size:12px;color:var(--muted)" id="search-count">Entrez un nom pour rechercher</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Dénomination</th><th>Forme</th><th>Voies admin.</th><th>Statut AMM</th><th>État</th><th>Titulaire</th><th>Date AMM</th></tr></thead>
+        <tbody id="med-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">
+            ✨ Entrez un nom de médicament pour rechercher dans la base<br>
+            <small style="font-size:11px;margin-top:6px;display:block">Données live disponibles après connexion au backend Render</small>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ LABOS ══════════ -->
+<section id="page-labos" class="page">
+  <div class="page-title">Laboratoires pharmaceutiques</div>
+  <div class="page-sub">Analyse comparative : développeurs de génériques vs non-génériques</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Labos génériqueurs vs non-génériqueurs</div>
+      <div class="chart-sub">Nombre de laboratoires selon leur activité générique</div>
+      <div class="chart-wrap"><canvas id="chart-labo-global"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Volume médicaments : avec vs sans générique</div>
+      <div class="chart-sub">Nombre total de spécialités dans chaque catégorie</div>
+      <div class="chart-wrap"><canvas id="chart-labo-med"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-card full" style="margin-bottom:18px">
+    <div class="chart-title">Top 15 laboratoires — ratio génériques vs non-génériques</div>
+    <div class="chart-sub">Bleu = médicaments avec un groupe générique · Gris = sans générique · Trié par volume total</div>
+    <div class="chart-wrap-tall"><canvas id="chart-labo-ratio"></canvas></div>
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="chart-title">Détail par laboratoire</div>
+      <input class="search-input" id="search-labo" placeholder="🔍 Filtrer..." oninput="filterLaboTable()"/>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Laboratoire</th><th>Total médicaments</th><th>Avec générique</th><th>Sans générique</th><th>Ratio générique</th></tr></thead>
+        <tbody id="labo-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ AMM ══════════ -->
+<section id="page-amm" class="page">
+  <div class="page-title">AMM & Indications par entreprise</div>
+  <div class="page-sub">Évolution temporelle des autorisations de mise sur le marché depuis 1995</div>
+  <div class="chart-card full" style="margin-bottom:18px">
+    <div class="chart-title">Évolution annuelle des AMM — toutes entreprises</div>
+    <div class="chart-sub">Nombre d'autorisations accordées par année</div>
+    <div class="chart-wrap-tall"><canvas id="chart-amm-annee"></canvas></div>
+  </div>
+  <div class="chart-card full" style="margin-bottom:18px">
+    <div class="chart-title">AMM par laboratoire — Top 8 entreprises</div>
+    <div class="chart-sub">Cliquez sur un laboratoire pour le mettre en évidence ou le masquer</div>
+    <div class="toggle-group" id="labo-toggles"></div>
+    <div class="chart-wrap-tall"><canvas id="chart-amm-labo"></canvas></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">AMM par type d'autorisation</div>
+      <div class="chart-sub">Nationale, européenne centralisée, reconnaissance mutuelle...</div>
+      <div class="chart-wrap"><canvas id="chart-amm-type2"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top formes pharmaceutiques</div>
+      <div class="chart-sub">Formes galéniques les plus autorisées</div>
+      <div class="chart-wrap"><canvas id="chart-amm-forme"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PRIX ══════════ -->
+<section id="page-prix" class="page">
+  <div class="page-title">Prix & Remboursement Sécu</div>
+  <div class="page-sub">Analyse des prix et taux de prise en charge par l'Assurance Maladie</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Répartition par taux de remboursement</div>
+      <div class="chart-sub">Nombre de présentations par taux (15%, 30%, 65%, 100%...)</div>
+      <div class="chart-wrap"><canvas id="chart-prix-remb"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Prix moyen par taux de remboursement</div>
+      <div class="chart-sub">Prix moyen sans honoraires en euros (données BDPM)</div>
+      <div class="chart-wrap"><canvas id="chart-prix-moyen"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-card full">
+    <div class="chart-title">Agrément collectivités par taux de remboursement</div>
+    <div class="chart-sub">Médicaments agréés pour les hôpitaux et collectivités</div>
+    <div class="chart-wrap"><canvas id="chart-collectivites"></canvas></div>
+  </div>
+</section>
+
+<!-- ══════════ ALERTES ══════════ -->
+<section id="page-alertes" class="page">
+  <div class="page-title">Alertes & Retraits du marché</div>
+  <div class="page-sub">Informations importantes publiées par l'ANSM</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Alertes par type d'information</div>
+      <div class="chart-sub">Répartition des informations importantes ANSM</div>
+      <div class="chart-wrap"><canvas id="chart-alertes-type"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Alertes par année</div>
+      <div class="chart-sub">Évolution du nombre d'alertes publiées</div>
+      <div class="chart-wrap"><canvas id="chart-alertes-annee"></canvas></div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><div class="chart-title">Dernières alertes ANSM</div></div>
+    <div id="alertes-list"></div>
+  </div>
+</section>
+
+<!-- ══════════ PIPELINE ══════════ -->
+<section id="page-pipeline" class="page">
+  <div class="page-title">Pipeline & Logs</div>
+  <div class="page-sub">État du scheduler et historique des exécutions automatiques</div>
+  <div class="kpi-grid">
+    <div class="kpi kpi-accent">
+      <div class="kpi-label">Scheduler</div>
+      <div class="kpi-value" style="font-size:16px;color:var(--accent2)">● Actif</div>
+      <div class="kpi-sub">6h30 et 18h30 UTC</div>
+    </div>
+    <div class="kpi kpi-green">
+      <div class="kpi-label">Source officielle</div>
+      <div class="kpi-value" style="font-size:13px;color:var(--white);margin-top:8px">medicaments.gouv.fr</div>
+      <div class="kpi-sub">BDPM — Licence Ouverte</div>
+    </div>
+    <div class="kpi kpi-yellow">
+      <div class="kpi-label">Tables scrappées</div>
+      <div class="kpi-value">7</div>
+      <div class="kpi-sub">spécialités, prix, alertes...</div>
+    </div>
+    <div class="kpi kpi-red">
+      <div class="kpi-label">Statut API</div>
+      <div class="kpi-value" style="font-size:13px;margin-top:8px"><span class="api-status"><span class="dot offline" id="api-dot"></span><span id="api-status-text">Vérification...</span></span></div>
+      <div class="kpi-sub" id="api-url-display"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+    <button class="refresh-btn" onclick="triggerScrape()">↻ Lancer un scraping maintenant</button>
+    <button class="refresh-btn" style="background:var(--surface);border:1px solid var(--border);" onclick="loadLogs()">🔄 Rafraîchir les logs</button>
+  </div>
+  <div class="chart-card" style="margin-bottom:18px">
+    <div class="chart-title" style="margin-bottom:16px">Tables de la base de données</div>
+    <table>
+      <thead><tr><th>Table</th><th>Contenu</th><th>Mise à jour</th></tr></thead>
+      <tbody>
+        <tr><td><strong>specialites</strong></td><td>15 847 médicaments, statut AMM, titulaire</td><td><span class="badge badge-green">2× / jour</span></td></tr>
+        <tr><td><strong>presentations</strong></td><td>Prix, CIP, taux remboursement</td><td><span class="badge badge-green">2× / jour</span></td></tr>
+        <tr><td><strong>compositions</strong></td><td>Substances actives, dosages</td><td><span class="badge badge-green">2× / jour</span></td></tr>
+        <tr><td><strong>generiques</strong></td><td>Groupes génériques, type</td><td><span class="badge badge-green">2× / jour</span></td></tr>
+        <tr><td><strong>alertes</strong></td><td>Informations importantes ANSM</td><td><span class="badge badge-green">2× / jour</span></td></tr>
+        <tr><td><strong>smr</strong></td><td>Service médical rendu (HAS)</td><td><span class="badge badge-green">2× / jour</span></td></tr>
+        <tr><td><strong>asmr</strong></td><td>Amélioration SMR (HAS)</td><td><span class="badge badge-green">2× / jour</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-card">
+    <div class="chart-title" style="margin-bottom:14px">Historique des exécutions</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Table</th><th>Lignes insérées</th><th>Statut</th><th>Date UTC</th></tr></thead>
+        <tbody id="logs-tbody"><tr><td colspan="4" style="text-align:center;padding:30px;color:var(--muted)">Logs disponibles après connexion au backend</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ══════════ CONFIG ══════════
+const API = 'https://pipeline-complet-pour-un-dashboard.onrender.com'; // ← Remplacer par URL Render médicaments
+const PALETTE = ['#6c63ff','#00d4aa','#ff6b6b','#ffd93d','#a78bfa','#34d399','#f97316','#60a5fa','#f472b6','#818cf8','#fb7185','#4ade80'];
+
+// ══════════ DONNÉES DÉMO ══════════
+const DEMO = {
+  stats:{total_medicaments:15847,commercialises:11203,rembourses_secu:8941,alertes_retraits:342,laboratoires:724,groupes_generiques:2184,derniere_maj:'2026-02-01T06:30:00'},
+  ammType:[{type_amm:'Nationale',nb:8234},{type_amm:'Européenne centralisée',nb:3412},{type_amm:'Reconnaissance mutuelle',nb:2891},{type_amm:'Décentralisée',nb:1310}],
+  formes:[{forme_pharma:'Comprimé pelliculé',nb:3241},{forme_pharma:'Gélule',nb:2187},{forme_pharma:'Solution injectable',nb:1654},{forme_pharma:'Comprimé',nb:1432},{forme_pharma:'Solution buvable',nb:987},{forme_pharma:'Pommade',nb:743},{forme_pharma:'Sirop',nb:621},{forme_pharma:'Suppositoire',nb:498},{forme_pharma:'Collyre',nb:412},{forme_pharma:'Patch',nb:387}],
+  remboursement:[{taux_remboursement:'65',nb_presentations:4821},{taux_remboursement:'30',nb_presentations:2341},{taux_remboursement:'100',nb_presentations:1298},{taux_remboursement:'15',nb_presentations:481}],
+  laboGlobal:[{categorie:'Développe des génériques',nb_laboratoires:287,nb_medicaments:9341},{categorie:'Pas de génériques',nb_laboratoires:437,nb_medicaments:6506}],
+  laboTop:[
+    {laboratoire:'SANOFI',total_medicaments:412,avec_generique:289,sans_generique:123,ratio_generique_pct:70.1},
+    {laboratoire:'PFIZER',total_medicaments:387,avec_generique:198,sans_generique:189,ratio_generique_pct:51.2},
+    {laboratoire:'BIOGARAN',total_medicaments:341,avec_generique:341,sans_generique:0,ratio_generique_pct:100.0},
+    {laboratoire:'MYLAN',total_medicaments:298,avec_generique:298,sans_generique:0,ratio_generique_pct:100.0},
+    {laboratoire:'NOVARTIS',total_medicaments:276,avec_generique:87,sans_generique:189,ratio_generique_pct:31.5},
+    {laboratoire:'ROCHE',total_medicaments:254,avec_generique:43,sans_generique:211,ratio_generique_pct:16.9},
+    {laboratoire:'MERCK',total_medicaments:231,avec_generique:142,sans_generique:89,ratio_generique_pct:61.5},
+    {laboratoire:'ARROW',total_medicaments:214,avec_generique:214,sans_generique:0,ratio_generique_pct:100.0},
+    {laboratoire:'ASTRAZENECA',total_medicaments:198,avec_generique:67,sans_generique:131,ratio_generique_pct:33.8},
+    {laboratoire:'TEVA',total_medicaments:187,avec_generique:187,sans_generique:0,ratio_generique_pct:100.0},
+    {laboratoire:'BAYER',total_medicaments:176,avec_generique:54,sans_generique:122,ratio_generique_pct:30.7},
+    {laboratoire:'GSK',total_medicaments:165,avec_generique:78,sans_generique:87,ratio_generique_pct:47.3},
+    {laboratoire:'SANDOZ',total_medicaments:154,avec_generique:154,sans_generique:0,ratio_generique_pct:100.0},
+    {laboratoire:'JOHNSON & JOHNSON',total_medicaments:143,avec_generique:21,sans_generique:122,ratio_generique_pct:14.7},
+    {laboratoire:'LILLY',total_medicaments:132,avec_generique:38,sans_generique:94,ratio_generique_pct:28.8},
+  ],
+  ammAnnee:[
+    {annee:'1995',nb_amm:287},{annee:'1996',nb_amm:312},{annee:'1997',nb_amm:298},{annee:'1998',nb_amm:334},
+    {annee:'1999',nb_amm:356},{annee:'2000',nb_amm:401},{annee:'2001',nb_amm:387},{annee:'2002',nb_amm:412},
+    {annee:'2003',nb_amm:398},{annee:'2004',nb_amm:423},{annee:'2005',nb_amm:445},{annee:'2006',nb_amm:467},
+    {annee:'2007',nb_amm:489},{annee:'2008',nb_amm:512},{annee:'2009',nb_amm:498},{annee:'2010',nb_amm:534},
+    {annee:'2011',nb_amm:521},{annee:'2012',nb_amm:487},{annee:'2013',nb_amm:503},{annee:'2014',nb_amm:478},
+    {annee:'2015',nb_amm:512},{annee:'2016',nb_amm:534},{annee:'2017',nb_amm:556},{annee:'2018',nb_amm:589},
+    {annee:'2019',nb_amm:612},{annee:'2020',nb_amm:578},{annee:'2021',nb_amm:634},{annee:'2022',nb_amm:667},
+    {annee:'2023',nb_amm:698},{annee:'2024',nb_amm:712},{annee:'2025',nb_amm:487}
+  ],
+  ammLabo:{
+    labos:['SANOFI','PFIZER','NOVARTIS','ROCHE','MERCK','ASTRAZENECA','BAYER','GSK'],
+    annees:['2000','2005','2010','2015','2018','2020','2022','2024','2025'],
+    data:{
+      'SANOFI':    [18,22,28,31,35,29,38,41,22],
+      'PFIZER':    [15,19,24,28,31,26,34,37,19],
+      'NOVARTIS':  [12,16,21,25,28,23,29,32,16],
+      'ROCHE':     [10,14,18,22,24,19,26,28,14],
+      'MERCK':     [8,12,16,19,21,17,23,25,12],
+      'ASTRAZENECA':[7,10,14,17,19,15,21,23,11],
+      'BAYER':     [6,9,13,16,18,14,19,21,10],
+      'GSK':       [9,13,17,20,22,18,24,26,13],
+    }
+  },
+  prixRemb:[
+    {taux_remboursement:'65',nb_presentations:4821,prix_moyen:28.4},
+    {taux_remboursement:'30',nb_presentations:2341,prix_moyen:19.7},
+    {taux_remboursement:'100',nb_presentations:1298,prix_moyen:412.3},
+    {taux_remboursement:'15',nb_presentations:481,prix_moyen:12.1},
+  ],
+  alertes:[
+    {denomination:'METFORMINE MYLAN 500mg',type_info:'Retrait de lot',titulaire:'MYLAN',lien_html:'https://ansm.sante.fr'},
+    {denomination:'VALSARTAN BIOGARAN 160mg',type_info:'Retrait de lot',titulaire:'BIOGARAN',lien_html:'https://ansm.sante.fr'},
+    {denomination:'RANITIDINE ARROW 150mg',type_info:'Suspension AMM',titulaire:'ARROW',lien_html:'https://ansm.sante.fr'},
+    {denomination:'HYDROXYCHLOROQUINE SANOFI',type_info:'Modification RCP',titulaire:'SANOFI',lien_html:'https://ansm.sante.fr'},
+    {denomination:'ZOLPIDEM SANDOZ 10mg',type_info:'Restriction indication',titulaire:'SANDOZ',lien_html:'https://ansm.sante.fr'},
+    {denomination:'IBUPROFENE TEVA 400mg',type_info:'Mise en garde',titulaire:'TEVA',lien_html:'https://ansm.sante.fr'},
+  ],
+  alertesType:[{type_info:'Retrait de lot',nb:142},{type_info:'Modification RCP',nb:87},{type_info:'Mise en garde',nb:64},{type_info:'Suspension AMM',nb:31},{type_info:'Restriction indication',nb:18}],
+  alertesAnnee:[{annee:'2019',nb:48},{annee:'2020',nb:67},{annee:'2021',nb:54},{annee:'2022',nb:71},{annee:'2023',nb:89},{annee:'2024',nb:97},{annee:'2025',nb:43}],
+};
+
+// ══════════ NAVIGATION ══════════
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='labos' && !window._labosOk) renderLabos();
+  if(name==='amm' && !window._ammOk) renderAMM();
+  if(name==='prix' && !window._prixOk) renderPrix();
+  if(name==='alertes' && !window._alertesOk) renderAlertes();
+  if(name==='pipeline') { checkAPI(); loadLogs(); }
+}
+
+// ══════════ CHART HELPER ══════════
+function mkChart(id, type, labels, datasets, extra={}) {
+  const c = document.getElementById(id);
+  if(!c) return;
+  if(c._ch) c._ch.destroy();
+  c._ch = new Chart(c, {
+    type,
+    data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8892b0',font:{size:12}},position:'bottom'}},
+      scales:['bar','line'].includes(type)?{
+        x:{ticks:{color:'#8892b0',font:{size:11}},grid:{color:'rgba(46,49,80,.4)'}},
+        y:{ticks:{color:'#8892b0'},grid:{color:'rgba(46,49,80,.4)'}}
+      }:{},
+      ...extra
+    }
+  });
+}
+
+// ══════════ OVERVIEW ══════════
+async function renderOverview() {
+  let s = DEMO.stats;
+  let ammType = DEMO.ammType;
+  let formes = DEMO.formes;
+  let remb = DEMO.remboursement;
+  let isLive = false;
+
+  try {
+    const r = await fetch(API+'/api/stats',{signal:AbortSignal.timeout(4000)});
+    if(r.ok){
+      s = await r.json(); isLive=true;
+      ammType = await (await fetch(API+'/api/amm/par-type')).json();
+      formes = await (await fetch(API+'/api/amm/par-forme')).json();
+      remb = await (await fetch(API+'/api/prix/remboursement')).json();
+    }
+  } catch(e){}
+
+  document.getElementById('mode-badge').textContent = isLive ? '🟢 Données live' : '⚡ Mode démo';
+  document.getElementById('mode-badge').style.background = isLive ? 'rgba(0,212,170,.15)' : 'rgba(255,217,61,.15)';
+  document.getElementById('mode-badge').style.color = isLive ? 'var(--accent2)' : 'var(--accent4)';
+  document.getElementById('last-update-text').textContent = s.derniere_maj ? 'Màj : '+s.derniere_maj.substring(0,16) : '';
+
+  document.getElementById('kpi-total').textContent = (s.total_medicaments||0).toLocaleString('fr');
+  document.getElementById('kpi-comm').textContent = (s.commercialises||0).toLocaleString('fr');
+  document.getElementById('kpi-remb').textContent = (s.rembourses_secu||0).toLocaleString('fr');
+  document.getElementById('kpi-alertes').textContent = (s.alertes_retraits||0).toLocaleString('fr');
+  document.getElementById('kpi-labos').textContent = (s.laboratoires||0).toLocaleString('fr');
+  document.getElementById('kpi-gen').textContent = (s.groupes_generiques||0).toLocaleString('fr');
+
+  const byType={};
+  ammType.forEach(r=>{ byType[r.type_amm]=(byType[r.type_amm]||0)+r.nb; });
+  mkChart('chart-amm-type','doughnut',Object.keys(byType),[{data:Object.values(byType),backgroundColor:PALETTE,borderWidth:2,borderColor:'#222538'}]);
+  mkChart('chart-etat','doughnut',['Commercialisés','Non commercialisés'],[{data:[s.commercialises,s.total_medicaments-s.commercialises],backgroundColor:['#00d4aa','#ff6b6b'],borderWidth:2,borderColor:'#222538'}]);
+
+  const top10 = formes.slice(0,10);
+  mkChart('chart-formes','bar',top10.map(r=>(r.forme_pharma||'—').substring(0,22)),[{label:'Médicaments',data:top10.map(r=>r.nb),backgroundColor:PALETTE[0],borderRadius:5}],{plugins:{legend:{display:false}}});
+  mkChart('chart-remb','doughnut',remb.map(r=>r.taux_remboursement+'%'),[{data:remb.map(r=>r.nb_presentations),backgroundColor:PALETTE,borderWidth:2,borderColor:'#222538'}]);
+}
+
+// ══════════ MÉDICAMENTS ══════════
+let _searchTO;
+async function searchMed() {
+  clearTimeout(_searchTO);
+  _searchTO = setTimeout(async()=>{
+    const q = document.getElementById('search-med').value.trim();
+    if(q.length < 2){
+      document.getElementById('search-count').textContent='Entrez au moins 2 caractères';
+      return;
+    }
+    document.getElementById('med-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">🔍 Recherche en cours...</td></tr>';
+    try {
+      const r = await fetch(`${API}/api/medicaments?q=${encodeURIComponent(q)}&limit=50`,{signal:AbortSignal.timeout(5000)});
+      const data = await r.json();
+      document.getElementById('search-count').textContent=data.length+' résultat(s)';
+      document.getElementById('med-tbody').innerHTML = data.length ? data.map(m=>`
+        <tr>
+          <td><strong>${m.denomination||'—'}</strong></td>
+          <td style="font-size:12px">${m.forme_pharma||'—'}</td>
+          <td style="font-size:11px;color:var(--muted)">${m.voies_admin||'—'}</td>
+          <td><span class="badge badge-blue">${m.statut_amm||'—'}</span></td>
+          <td><span class="badge ${m.etat_commercialisation==='Commercialisée'?'badge-green':'badge-red'}">${m.etat_commercialisation||'—'}</span></td>
+          <td style="font-size:12px">${m.titulaire||'—'}</td>
+          <td style="font-size:12px;color:var(--muted)">${m.date_amm||'—'}</td>
+        </tr>`).join('')
+        : '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Aucun résultat</td></tr>';
+    } catch(e){
+      document.getElementById('med-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--accent3)">⚠️ Backend non connecté — déployez d\'abord sur Render</td></tr>';
+    }
+  },350);
+}
+
+// ══════════ LABOS ══════════
+let _labosAll = [];
+function renderLabos() {
+  window._labosOk=true;
+  _labosAll = DEMO.laboTop;
+  const g = DEMO.laboGlobal;
+
+  mkChart('chart-labo-global','doughnut',g.map(r=>r.categorie),[{data:g.map(r=>r.nb_laboratoires),backgroundColor:['#6c63ff','#2e3150'],borderWidth:2,borderColor:'#222538'}]);
+  mkChart('chart-labo-med','doughnut',g.map(r=>r.categorie),[{data:g.map(r=>r.nb_medicaments),backgroundColor:['#00d4aa','#ff6b6b'],borderWidth:2,borderColor:'#222538'}]);
+
+  const top15 = _labosAll.slice(0,15);
+  mkChart('chart-labo-ratio','bar',top15.map(r=>r.laboratoire.substring(0,16)),[
+    {label:'Avec générique',data:top15.map(r=>r.avec_generique),backgroundColor:'#6c63ff',borderRadius:4,stack:'s'},
+    {label:'Sans générique',data:top15.map(r=>r.sans_generique),backgroundColor:'rgba(46,49,80,.9)',borderRadius:4,stack:'s'},
+  ],{plugins:{legend:{labels:{color:'#8892b0'}}},scales:{x:{stacked:true,ticks:{color:'#8892b0',font:{size:10}},grid:{color:'rgba(46,49,80,.4)'}},y:{stacked:true,ticks:{color:'#8892b0'},grid:{color:'rgba(46,49,80,.4)'}}}});
+
+  renderLaboTable(_labosAll);
+
+  // Essai live
+  fetch(API+'/api/labos/generiques?top=20',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(data=>{
+    _labosAll=data;
+    renderLaboTable(data);
+  }).catch(()=>{});
+}
+
+function renderLaboTable(data){
+  document.getElementById('labo-tbody').innerHTML=data.map(r=>`
+    <tr>
+      <td><strong>${r.laboratoire||'—'}</strong></td>
+      <td>${(r.total_medicaments||0).toLocaleString('fr')}</td>
+      <td><span class="badge badge-blue">${r.avec_generique||0}</span></td>
+      <td><span class="badge badge-grey">${r.sans_generique||0}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar"><div class="progress-fill" style="width:${r.ratio_generique_pct||0}%"></div></div>
+          <span style="font-size:12px;color:var(--accent);font-weight:700;min-width:38px">${r.ratio_generique_pct||0}%</span>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function filterLaboTable(){
+  const q=document.getElementById('search-labo').value.toLowerCase();
+  renderLaboTable(_labosAll.filter(r=>(r.laboratoire||'').toLowerCase().includes(q)));
+}
+
+// ══════════ AMM ══════════
+let _ammActiveLabos=new Set(['SANOFI','PFIZER','NOVARTIS','ROCHE','MERCK']);
+function renderAMM(){
+  window._ammOk=true;
+  const d = DEMO.ammAnnee;
+  mkChart('chart-amm-annee','line',d.map(r=>r.annee),[{
+    label:'Nouvelles AMM',data:d.map(r=>r.nb_amm),
+    borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,.15)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#6c63ff'
+  }]);
+
+  renderLaboToggles();
+  renderAmmLaboChart();
+
+  const ammType=DEMO.ammType;
+  const byType={};
+  ammType.forEach(r=>{byType[r.type_amm]=(byType[r.type_amm]||0)+r.nb;});
+  mkChart('chart-amm-type2','doughnut',Object.keys(byType),[{data:Object.values(byType),backgroundColor:PALETTE,borderWidth:2,borderColor:'#222538'}]);
+
+  const formes=DEMO.formes.slice(0,8);
+  mkChart('chart-amm-forme','bar',formes.map(r=>r.forme_pharma.substring(0,18)),[{label:'AMM',data:formes.map(r=>r.nb),backgroundColor:'#00d4aa',borderRadius:5}],{plugins:{legend:{display:false}}});
+
+  // Essai live
+  fetch(API+'/api/amm/par-annee',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(data=>{
+    mkChart('chart-amm-annee','line',data.map(r=>r.annee),[{label:'Nouvelles AMM',data:data.map(r=>r.nb_amm),borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,.15)',fill:true,tension:.4,pointRadius:3}]);
+  }).catch(()=>{});
+}
+
+function renderLaboToggles(){
+  const d=DEMO.ammLabo;
+  document.getElementById('labo-toggles').innerHTML=d.labos.map((l,i)=>`
+    <button class="toggle-btn ${_ammActiveLabos.has(l)?'active':''}"
+      style="${_ammActiveLabos.has(l)?`background:${PALETTE[i]};border-color:${PALETTE[i]};color:#fff`:''}"
+      onclick="toggleAmmLabo('${l}',${i},this)">${l.substring(0,14)}</button>`).join('');
+}
+
+function toggleAmmLabo(nom,i,btn){
+  if(_ammActiveLabos.has(nom)){_ammActiveLabos.delete(nom);btn.classList.remove('active');btn.style.background='';btn.style.borderColor='';btn.style.color='';}
+  else{_ammActiveLabos.add(nom);btn.classList.add('active');btn.style.background=PALETTE[i];btn.style.borderColor=PALETTE[i];btn.style.color='#fff';}
+  renderAmmLaboChart();
+}
+
+function renderAmmLaboChart(){
+  const d=DEMO.ammLabo;
+  const datasets=d.labos.filter(l=>_ammActiveLabos.has(l)).map((l,_)=>{
+    const i=d.labos.indexOf(l);
+    return{label:l,data:d.data[l],borderColor:PALETTE[i],backgroundColor:PALETTE[i]+'25',fill:false,tension:.3,pointRadius:3};
+  });
+  mkChart('chart-amm-labo','line',d.annees,datasets);
+}
+
+// ══════════ PRIX ══════════
+function renderPrix(){
+  window._prixOk=true;
+  const d=DEMO.prixRemb;
+  mkChart('chart-prix-remb','doughnut',d.map(r=>r.taux_remboursement+'%'),[{data:d.map(r=>r.nb_presentations),backgroundColor:PALETTE,borderWidth:2,borderColor:'#222538'}]);
+  mkChart('chart-prix-moyen','bar',d.map(r=>r.taux_remboursement+'%'),[{label:'Prix moyen (€)',data:d.map(r=>r.prix_moyen),backgroundColor:'#ffd93d',borderRadius:6}],{plugins:{legend:{display:false}}});
+  mkChart('chart-collectivites','bar',d.map(r=>r.taux_remboursement+'%'),[
+    {label:'Agréé collectivités',data:d.map(r=>Math.round(r.nb_presentations*0.7)),backgroundColor:'#6c63ff',borderRadius:4},
+    {label:'Non agréé',data:d.map(r=>Math.round(r.nb_presentations*0.3)),backgroundColor:'rgba(46,49,80,.9)',borderRadius:4},
+  ],{scales:{x:{stacked:true,ticks:{color:'#8892b0'},grid:{color:'rgba(46,49,80,.4)'}},y:{stacked:true,ticks:{color:'#8892b0'},grid:{color:'rgba(46,49,80,.4)'}}}});
+
+  fetch(API+'/api/prix/stats',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(data=>{
+    const v=data.filter(r=>r.prix_moyen&&r.prix_moyen>0);
+    mkChart('chart-prix-moyen','bar',v.map(r=>r.taux_remboursement+'%'),[{label:'Prix moyen (€)',data:v.map(r=>r.prix_moyen),backgroundColor:'#ffd93d',borderRadius:6}],{plugins:{legend:{display:false}}});
+  }).catch(()=>{});
+}
+
+// ══════════ ALERTES ══════════
+function renderAlertes(){
+  window._alertesOk=true;
+  const t=DEMO.alertesType;
+  const a=DEMO.alertesAnnee;
+  mkChart('chart-alertes-type','doughnut',t.map(r=>r.type_info),[{data:t.map(r=>r.nb),backgroundColor:PALETTE,borderWidth:2,borderColor:'#222538'}]);
+  mkChart('chart-alertes-annee','bar',a.map(r=>r.annee),[{label:'Alertes publiées',data:a.map(r=>r.nb),backgroundColor:'#ff6b6b',borderRadius:5}],{plugins:{legend:{display:false}}});
+  document.getElementById('alertes-list').innerHTML=DEMO.alertes.map(al=>`
+    <div class="alerte-item">
+      <div class="alerte-icon">⚠️</div>
+      <div class="alerte-body">
+        <h4>${al.denomination||al.cis||'—'}</h4>
+        <p>${al.type_info||'Information importante'}${al.titulaire?' · '+al.titulaire:''}</p>
+        ${al.lien_html?`<a href="${al.lien_html}" target="_blank">→ Voir le document ANSM</a>`:''}
+      </div>
+    </div>`).join('');
+
+  fetch(API+'/api/alertes?limit=20',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(data=>{
+    if(data.length) document.getElementById('alertes-list').innerHTML=data.map(al=>`
+      <div class="alerte-item">
+        <div class="alerte-icon">⚠️</div>
+        <div class="alerte-body">
+          <h4>${al.denomination||al.cis||'—'}</h4>
+          <p>${al.type_info||'Information importante'}${al.titulaire?' · '+al.titulaire:''}</p>
+          ${al.lien_html?`<a href="${al.lien_html}" target="_blank">→ Voir le document ANSM</a>`:''}
+        </div>
+      </div>`).join('');
+  }).catch(()=>{});
+}
+
+// ══════════ PIPELINE ══════════
+async function checkAPI(){
+  try{
+    const r=await fetch(API+'/api/stats',{signal:AbortSignal.timeout(4000)});
+    if(r.ok){
+      document.getElementById('api-dot').classList.remove('offline');
+      document.getElementById('api-status-text').textContent='Connecté';
+      document.getElementById('api-url-display').textContent=API.replace('https://','');
+    }
+  }catch(e){
+    document.getElementById('api-dot').classList.add('offline');
+    document.getElementById('api-status-text').textContent='Non connecté';
+  }
+}
+
+async function loadLogs(){
+  try{
+    const r=await fetch(API+'/api/scrape/logs?limit=20',{signal:AbortSignal.timeout(4000)});
+    const logs=await r.json();
+    document.getElementById('logs-tbody').innerHTML=logs.map(l=>`
+      <tr>
+        <td><strong>${l.table_name}</strong></td>
+        <td>${(l.rows_inserted||0).toLocaleString('fr')}</td>
+        <td><span class="badge ${l.status==='OK'?'badge-green':'badge-red'}">${l.status}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${(l.executed_at||'').substring(0,19)}</td>
+      </tr>`).join('');
+  }catch(e){
+    document.getElementById('logs-tbody').innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Backend non connecté</td></tr>';
+  }
+}
+
+async function triggerScrape(){
+  try{
+    await fetch(API+'/api/scrape/trigger',{method:'POST',signal:AbortSignal.timeout(4000)});
+    alert('Scraping lancé en arrière-plan !');
+  }catch(e){ alert('Backend non disponible — déployez d\'abord sur Render.'); }
+}
+
+async function triggerRefresh(){
+  window._overviewLoaded=false;
+  await renderOverview();
+}
+
+// ══════════ INIT ══════════
+renderOverview();
+</script>
+</body>
+</html>
