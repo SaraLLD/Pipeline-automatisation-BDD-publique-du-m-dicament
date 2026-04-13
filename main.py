@@ -19,8 +19,9 @@ async def lifespan(app: FastAPI):
     count = conn.execute("SELECT COUNT(*) FROM specialites").fetchone()[0]
     conn.close()
     if count == 0:
-        log.info("Base vide — premier scraping lancé...")
-        scrape_all()
+        log.info("Base vide — scraping lancé en arrière-plan...")
+        import threading
+        threading.Thread(target=scrape_all, daemon=True).start()
     start_scheduler()
     yield
 

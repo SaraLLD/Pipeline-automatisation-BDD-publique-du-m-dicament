@@ -449,7 +449,7 @@ async function renderOverview() {
   let isLive = false;
 
   try {
-    const r = await fetch(API+'/api/stats',{signal:AbortSignal.timeout(4000)});
+    const r = await fetch(API+'/api/stats',{signal:AbortSignal.timeout(15000)});
     if(r.ok){
       s = await r.json(); isLive=true;
       ammType = await (await fetch(API+'/api/amm/par-type')).json();
@@ -492,7 +492,7 @@ async function searchMed() {
     }
     document.getElementById('med-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">🔍 Recherche en cours...</td></tr>';
     try {
-      const r = await fetch(`${API}/api/medicaments?q=${encodeURIComponent(q)}&limit=50`,{signal:AbortSignal.timeout(5000)});
+      const r = await fetch(`${API}/api/medicaments?q=${encodeURIComponent(q)}&limit=50`,{signal:AbortSignal.timeout(15000)});
       const data = await r.json();
       document.getElementById('search-count').textContent=data.length+' résultat(s)';
       document.getElementById('med-tbody').innerHTML = data.length ? data.map(m=>`
@@ -531,7 +531,7 @@ function renderLabos() {
   renderLaboTable(_labosAll);
 
   // Essai live
-  fetch(API+'/api/labos/generiques?top=20',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(data=>{
+  fetch(API+'/api/labos/generiques?top=20',{signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(data=>{
     _labosAll=data;
     renderLaboTable(data);
   }).catch(()=>{});
@@ -580,7 +580,7 @@ function renderAMM(){
   mkChart('chart-amm-forme','bar',formes.map(r=>r.forme_pharma.substring(0,18)),[{label:'AMM',data:formes.map(r=>r.nb),backgroundColor:'#00d4aa',borderRadius:5}],{plugins:{legend:{display:false}}});
 
   // Essai live
-  fetch(API+'/api/amm/par-annee',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(data=>{
+  fetch(API+'/api/amm/par-annee',{signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(data=>{
     mkChart('chart-amm-annee','line',data.map(r=>r.annee),[{label:'Nouvelles AMM',data:data.map(r=>r.nb_amm),borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,.15)',fill:true,tension:.4,pointRadius:3}]);
   }).catch(()=>{});
 }
@@ -619,7 +619,7 @@ function renderPrix(){
     {label:'Non agréé',data:d.map(r=>Math.round(r.nb_presentations*0.3)),backgroundColor:'rgba(46,49,80,.9)',borderRadius:4},
   ],{scales:{x:{stacked:true,ticks:{color:'#8892b0'},grid:{color:'rgba(46,49,80,.4)'}},y:{stacked:true,ticks:{color:'#8892b0'},grid:{color:'rgba(46,49,80,.4)'}}}});
 
-  fetch(API+'/api/prix/stats',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(data=>{
+  fetch(API+'/api/prix/stats',{signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(data=>{
     const v=data.filter(r=>r.prix_moyen&&r.prix_moyen>0);
     mkChart('chart-prix-moyen','bar',v.map(r=>r.taux_remboursement+'%'),[{label:'Prix moyen (€)',data:v.map(r=>r.prix_moyen),backgroundColor:'#ffd93d',borderRadius:6}],{plugins:{legend:{display:false}}});
   }).catch(()=>{});
@@ -642,7 +642,7 @@ function renderAlertes(){
       </div>
     </div>`).join('');
 
-  fetch(API+'/api/alertes?limit=20',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(data=>{
+  fetch(API+'/api/alertes?limit=20',{signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(data=>{
     if(data.length) document.getElementById('alertes-list').innerHTML=data.map(al=>`
       <div class="alerte-item">
         <div class="alerte-icon">⚠️</div>
@@ -658,7 +658,7 @@ function renderAlertes(){
 // ══════════ PIPELINE ══════════
 async function checkAPI(){
   try{
-    const r=await fetch(API+'/api/stats',{signal:AbortSignal.timeout(4000)});
+    const r=await fetch(API+'/api/stats',{signal:AbortSignal.timeout(15000)});
     if(r.ok){
       document.getElementById('api-dot').classList.remove('offline');
       document.getElementById('api-status-text').textContent='Connecté';
@@ -672,7 +672,7 @@ async function checkAPI(){
 
 async function loadLogs(){
   try{
-    const r=await fetch(API+'/api/scrape/logs?limit=20',{signal:AbortSignal.timeout(4000)});
+    const r=await fetch(API+'/api/scrape/logs?limit=20',{signal:AbortSignal.timeout(15000)});
     const logs=await r.json();
     document.getElementById('logs-tbody').innerHTML=logs.map(l=>`
       <tr>
@@ -688,7 +688,7 @@ async function loadLogs(){
 
 async function triggerScrape(){
   try{
-    await fetch(API+'/api/scrape/trigger',{method:'POST',signal:AbortSignal.timeout(4000)});
+    await fetch(API+'/api/scrape/trigger',{method:'POST',signal:AbortSignal.timeout(15000)});
     alert('Scraping lancé en arrière-plan !');
   }catch(e){ alert('Backend non disponible — déployez d\'abord sur Render.'); }
 }
