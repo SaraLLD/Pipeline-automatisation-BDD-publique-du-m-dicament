@@ -99,7 +99,7 @@ def telecharger(nom_fichier, url_override=None):
     try:
         r = requests.get(url, timeout=60)
         r.raise_for_status()
-        content = r.content.decode("utf-8", errors="replace")
+        content = r.content.decode("latin-1")
         df = pd.read_csv(StringIO(content), sep="\t", header=None, dtype=str, quoting=3, on_bad_lines="skip")
         log.info(f"  ✓ {nom_fichier} → {len(df)} lignes")
         return df
