@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger(__name__)
 
 DB_PATH = os.environ.get("DB_PATH", "data/medicaments.db")
-BASE_URL = "https://base-donnees-publique.medicaments.gouv.fr/telechargement.php?fichier="
+BASE_URL = "https://base-donnees-publique.medicaments.gouv.fr/index.php/download/file/"
 
 FICHIERS = {
     "specialites":   "CIS_bdpm.txt",
@@ -20,6 +20,11 @@ FICHIERS = {
     "alertes":       "CIS_InfoImportantes.txt",
     "smr":           "CIS_HAS_SMR_bdpm.txt",
     "asmr":          "CIS_HAS_ASMR_bdpm.txt",
+}
+
+# URL spécifique pour le fichier alertes (chemin différent sur le serveur BDPM)
+URLS_SPECIFIQUES = {
+    "alertes": "https://base-donnees-publique.medicaments.gouv.fr/index.php/download/CIS_InfoImportantes.txt",
 }
 
 COLONNES = {
@@ -89,8 +94,8 @@ def init_db():
     conn.close()
     log.info("DB initialisée.")
 
-def telecharger(nom_fichier):
-    url = BASE_URL + nom_fichier
+def telecharger(nom_fichier, url_override=None):
+    url = url_override if url_override else BASE_URL + nom_fichier
     try:
         r = requests.get(url, timeout=60)
         r.raise_for_status()
@@ -134,7 +139,8 @@ def scrape_all():
     conn = sqlite3.connect(DB_PATH)
     for table, fichier in FICHIERS.items():
         log.info(f"[{table}] {fichier}")
-        df = telecharger(fichier)
+        url_override = URLS_SPECIFIQUES.get(table)
+        df = telecharger(fichier, url_override)
         if df is not None:
             inserer(conn, table, df, COLONNES[table])
     conn.close()
