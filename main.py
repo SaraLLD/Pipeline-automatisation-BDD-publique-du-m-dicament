@@ -197,12 +197,12 @@ def amm_par_annee():
     conn = get_conn()
     rows = conn.execute("""
         SELECT
-            SUBSTR(date_amm, 1, 4) AS annee,
-            COUNT(*)               AS nb_amm
+            SUBSTR(date_amm, -4) AS annee,
+            COUNT(*)             AS nb_amm
         FROM specialites
         WHERE date_amm IS NOT NULL
-          AND SUBSTR(date_amm,1,4) GLOB '[0-9][0-9][0-9][0-9]'
-          AND CAST(SUBSTR(date_amm,1,4) AS INTEGER) >= 1990
+          AND SUBSTR(date_amm,-4) GLOB '[0-9][0-9][0-9][0-9]'
+          AND CAST(SUBSTR(date_amm,-4) AS INTEGER) >= 1990
         GROUP BY annee
         ORDER BY annee
     """).fetchall()
@@ -233,13 +233,13 @@ def amm_par_labo_annee(top_labos: int = Query(10, le=30)):
     rows = conn.execute(f"""
         SELECT
             titulaire,
-            SUBSTR(date_amm, 1, 4) AS annee,
-            COUNT(*)               AS nb_amm
+            SUBSTR(date_amm, -4) AS annee,
+            COUNT(*)             AS nb_amm
         FROM specialites
         WHERE titulaire IN ({placeholders})
           AND date_amm IS NOT NULL
-          AND SUBSTR(date_amm,1,4) GLOB '[0-9][0-9][0-9][0-9]'
-          AND CAST(SUBSTR(date_amm,1,4) AS INTEGER) >= 1995
+          AND SUBSTR(date_amm,-4) GLOB '[0-9][0-9][0-9][0-9]'
+          AND CAST(SUBSTR(date_amm,-4) AS INTEGER) >= 1995
         GROUP BY titulaire, annee
         ORDER BY annee, titulaire
     """, top_noms).fetchall()
