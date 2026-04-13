@@ -583,10 +583,23 @@ function renderAMM(){
   fetch(API+'/api/amm/par-annee',{signal:AbortSignal.timeout(60000)}).then(r=>r.json()).then(data=>{
     mkChart('chart-amm-annee','line',data.map(r=>r.annee),[{label:'Nouvelles AMM',data:data.map(r=>r.nb_amm),borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,.15)',fill:true,tension:.4,pointRadius:3}]);
   }).catch(()=>{});
+
+  fetch(API+'/api/amm/par-labo-annee?top_labos=8',{signal:AbortSignal.timeout(60000)}).then(r=>r.json()).then(resp=>{
+    const labos=resp.labos;
+    const annees=[...new Set(resp.data.map(r=>r.annee))].sort();
+    const dataMap={};
+    labos.forEach(l=>{ dataMap[l]=annees.map(a=>{ const row=resp.data.find(r=>r.titulaire===l&&r.annee===a); return row?row.nb_amm:0; }); });
+    _liveAmmLabo={labos,annees,data:dataMap};
+    _ammActiveLabos=new Set(labos.slice(0,5));
+    renderLaboToggles();
+    renderAmmLaboChart();
+  }).catch(()=>{});
 }
 
+let _liveAmmLabo=null;
+
 function renderLaboToggles(){
-  const d=DEMO.ammLabo;
+  const d=_liveAmmLabo||DEMO.ammLabo;
   document.getElementById('labo-toggles').innerHTML=d.labos.map((l,i)=>`
     <button class="toggle-btn ${_ammActiveLabos.has(l)?'active':''}"
       style="${_ammActiveLabos.has(l)?`background:${PALETTE[i]};border-color:${PALETTE[i]};color:#fff`:''}"
@@ -600,7 +613,7 @@ function toggleAmmLabo(nom,i,btn){
 }
 
 function renderAmmLaboChart(){
-  const d=DEMO.ammLabo;
+  const d=_liveAmmLabo||DEMO.ammLabo;
   const datasets=d.labos.filter(l=>_ammActiveLabos.has(l)).map((l,_)=>{
     const i=d.labos.indexOf(l);
     return{label:l,data:d.data[l],borderColor:PALETTE[i],backgroundColor:PALETTE[i]+'25',fill:false,tension:.3,pointRadius:3};
