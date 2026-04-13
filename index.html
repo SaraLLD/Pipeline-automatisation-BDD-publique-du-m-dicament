@@ -688,7 +688,7 @@ async function loadLogs(){
 
 async function triggerScrape(){
   try{
-    await fetch(API+'/api/scrape/trigger',{method:'POST',signal:AbortSignal.timeout(15000)});
+    await fetch(API+'/api/scrape/trigger',{method:'POST',signal:AbortSignal.timeout(35000)});
     alert('Scraping lancé en arrière-plan !');
   }catch(e){ alert('Backend non disponible — déployez d\'abord sur Render.'); }
 }
